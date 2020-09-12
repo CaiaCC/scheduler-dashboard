@@ -3,6 +3,7 @@ import classnames from "classnames";
 
 import Loading from './Loading';
 import Panel from './Panel';
+import { parseConfigFileTextToJson } from "typescript";
 
 const data = [
   {
@@ -28,25 +29,61 @@ const data = [
 ];
 
 class Dashboard extends Component {
-  state = {loading: false}
-  
+  // constructor(props) {
+  //   super(props);
+
+  //   this.selectPanel = this.selectPanel.bind(this);
+  // }
+  state = {
+    loading: true,
+    focused: null,
+    days:[],
+    appointments: {},
+    interviewers: {}
+  }
+
+  componentDidMount() {
+    const focused = JSON.parse(localStorage.getItem("focused"));
+
+    if (focused) {
+      this.setState({focused});
+    }
+  }
+
+  componentDidUpdate(preProps, preState) {
+    if (preState.focused !== this.state.focused) {
+      localStorage.setItem("focused", JSON.stringify(this.state.focused));
+    }
+  }
+
+  selectPanel(id) {
+    this.setState(preState => ({
+      focused: preState.focused !== null ? null : id
+    }));
+  };
+
   render() {
-    const dashboardClasses = classnames("dashboard");
+    const dashboardClasses = classnames("dashboard", {
+      'dashboard--focused': this.state.focused
+    });
     
     if (this.state.loading) {
-      return <Loading />
+      return <Loading />;
     }
     
-    const panels = data.map((panel) => {
-      return (
+    const panels = data
+      .filter(
+        panel => this.state.focused === null || this.state.focused === panel.id
+      )
+      .map(panel => (
         <Panel
           key={panel.id}
           id={panel.id}
           label={panel.label}
           value={panel.value}
+          onSelect={event => this.selectPanel(panel.id)}
         />
-      )
-    })
+      ));
     
     return <main  className={dashboardClasses}>{panels}</main>;
   }
